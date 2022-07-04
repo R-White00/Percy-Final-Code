@@ -1,0 +1,8 @@
+prefix=/home/gdp31/GDP31/workspace/install
+
+Name: percy_4ws_hi
+Description: Description of percy_4ws_hi
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: controller_manager hardware_interface roscpp roslaunch
