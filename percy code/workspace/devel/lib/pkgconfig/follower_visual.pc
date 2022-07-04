@@ -1,8 +1,0 @@
-prefix=/home/gdp31/GDP31/workspace/devel
-
-Name: follower_visual
-Description: Description of follower_visual
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

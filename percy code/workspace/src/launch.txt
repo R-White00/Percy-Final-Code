@@ -1,9 +1,0 @@
-source /home/gdp31/GDP31/workspace/devel/setup.bash
-roscore
-rosrun rosserial_python serial_node.py /dev/ttyACM0 _baud:=115200
-
-roslaunch delta_coords test.launch 
-
-rostopic pub -1 /points geometry_msgs/Point -- 0 0 -25.43
-
-v4l2-ctl --list-devices

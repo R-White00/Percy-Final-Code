@@ -1,8 +1,0 @@
-prefix=/home/gdp31/GDP31/workspace/install
-
-Name: dashboard_remote
-Description: Description of dashboard_remote
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

@@ -1,9 +1,0 @@
-# Define the goal
-int32 x 
-int32 y 
----
-# Define the result
-uint32 binary_result
----
-# Define a feedback message
-float32 percent_complete
