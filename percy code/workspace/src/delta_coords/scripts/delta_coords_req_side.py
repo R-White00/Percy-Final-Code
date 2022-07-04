@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+
+import rospy
+import actionlib
+import roslib
+from sensor_msgs.msg import Image
+from std_msgs.msg import String
+from geometry_msgs.msg import Point
+import time
+import numpy as np
+import math
+import cv2
+import cv_bridge
+from delta_coords.msg import SendCoordsAction, SendCoordsGoal
+
+class Delta_coords:
+
+    # BGR values to filter only the selected color range
+    lower_bgr_values = np.array([0,  0,  0])
+    upper_bgr_values = np.array([50, 50, 255])
+    bridge = cv_bridge.CvBridge()
+
+    def crop_size(height, width):
+        """
+        Get the measures to crop the image
+        Output:
+        (Height_upper_boundary, Height_lower_boundary,
+        Width_left_boundary, Width_right_boundary)
+        """
+        ## Update these values to your liking.
+
+        return (1*height//3, height, width//4, 3*width//4)
+
+    # Global vars. initial values
+    image_input = 0
+    # Send msgs every $TIMER_PERIOD seconds
+    TIMER_PERIOD = 1
+
+
+    def image_callback(self, msg):
+        """
+        Function to be called whenever a new Image msg arrives.
+        Update the global variable 'image_input'
+        """
+        self.image_input = self.bridge.imgmsg_to_cv2(msg,desired_encoding='bgr8')
+        # node.get_logger().info('Received image')
+
+    def publish_coords(self, contours, width):
+        self.msg = Point() 
+        c = max(contours, key = cv2.contourArea)
+        contour_centre = np.empty((0,2), int)       
+        if (cv2.contourArea(c) > 400):
+            # calculate moments for each contour
+            M = cv2.moments(c)        
+            # calculate x,y coordinate of center
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])  
+            self.msg = Point(x = cX, y = cY)
+            if (cY <= width *20/35 or cY >= width * 20/45):
+                #coord_pub.publish(self.msg)
+                client = actionlib.SimpleActionClient('send_coords', SendCoordsAction)
+                client.wait_for_server()
+                goal = SendCoordsGoal()
+                goal.x = cX
+                goal.y = cY
+                client.send_goal(goal)
+                client.wait_for_result(rospy.Duration.from_sec(5.0)) 
+
+
+
+    def timer_callback(self,boo):
+        var = 1
+        while var < 2:
+            # Wait for the first image to be received
+            if type(self.image_input) != np.ndarray:
+                return
+            height, width, _ = self.image_input.shape
+            img = self.image_input.copy()
+            img = cv2.flip(img, 0)
+            cv2.imshow('SIDECAMERA_img', img)
+            img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            ## Gen lower mask (0-5) and upper mask (175-180) of RED
+            mask2 = cv2.inRange(img_hsv, (170,60,127), (180,120,180))
+            #mask = cv2.inRange(img, lower_bgr_values, upper_bgr_values)
+            cv2.imshow('SIDECAMERA_mask', mask2)
+            cv2.waitKey(5)
+            contours, hierarchy = cv2.findContours(mask2, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_L1)
+            if len(contours) < 1:
+                break
+            else:
+                self.publish_coords(contours, width)
+
+
+
+if __name__ == '__main__':
+       
+    try:
+        rospy.init_node('Red_Searcher_Side')
+        d = Delta_coords()
+        image_sub = rospy.Subscriber('/video_source/raw',Image, d.image_callback, queue_size=10)
+        #permission_sub = rospy.wait_for_message('/permission', String, timer_callback)
+        timer = rospy.Timer(rospy.Duration(d.TIMER_PERIOD), d.timer_callback)
+
+        rospy.spin()
+    except rospy.ROSInterruptException:
+        pass

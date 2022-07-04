@@ -1,0 +1,8 @@
+prefix=/home/gdp31/GDP31/workspace/install
+
+Name: percy_v4
+Description: Description of percy_v4
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
